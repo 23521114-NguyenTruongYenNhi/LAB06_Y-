@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { Alert, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { StatusBar } from 'expo-status-bar';
 import { WebView } from 'react-native-webview';
@@ -301,10 +301,22 @@ export default function App() {
   const [mode, setMode] = useState('face');
   const [status, setStatus] = useState('OpenCV canvas is starting...');
 
-  const modeText = useMemo(() => (
+  const activeTask = useMemo(() => (
     mode === 'face'
-      ? 'Pick a front-facing photo. The app draws green boxes around detected faces.'
-      : 'Pick a book/page photo with shadow. The app applies an OpenCV shadow-removal pipeline.'
+      ? {
+        label: 'Face Detection',
+        accent: '#38bdf8',
+        button: 'Select Face Photo',
+        objective: 'Detect a face from your own photo using OpenCV Haar Cascade models.',
+        output: 'Result draws an assisted face bounding box on the selected image.'
+      }
+      : {
+        label: 'Book Shadow Removal',
+        accent: '#f59e0b',
+        button: 'Select Book Photo',
+        objective: 'Reduce shadows from a favorite book/page photo using OpenCV image processing.',
+        output: 'Result normalizes page brightness and flattens heavy shadow regions.'
+      }
   ), [mode]);
 
   const pickImage = async () => {
@@ -338,59 +350,155 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <StatusBar style="dark" />
-      <View style={styles.header}>
-        <Text style={styles.kicker}>Mobile Development - Lab 6</Text>
-        <Text style={styles.title}>OpenCV Vision Lab</Text>
-        <Text style={styles.subtitle}>{modeText}</Text>
-      </View>
+      <StatusBar style="light" />
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.hero}>
+          <View style={styles.topLine}>
+            <Text style={styles.course}>Mobile Development</Text>
+            <View style={styles.labBadge}><Text style={styles.labBadgeText}>Lab 06</Text></View>
+          </View>
+          <Text style={styles.title}>OpenCV Mobile Studio</Text>
+          <Text style={styles.subtitle}>Computer vision workspace for face detection and document shadow correction.</Text>
+        </View>
 
-      <View style={styles.segment}>
-        <TouchableOpacity style={[styles.segmentButton, mode === 'face' && styles.segmentOn]} onPress={() => setMode('face')}>
-          <Text style={[styles.segmentText, mode === 'face' && styles.segmentTextOn]}>Face Detection</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.segmentButton, mode === 'shadow' && styles.segmentOn]} onPress={() => setMode('shadow')}>
-          <Text style={[styles.segmentText, mode === 'shadow' && styles.segmentTextOn]}>Shadow Removal</Text>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.requirementsPanel}>
+          <Text style={styles.sectionTitle}>PDF Requirements</Text>
+          <View style={styles.requirementGrid}>
+            <Requirement label="OpenCV SDK" text="Install guide reviewed; Expo demo uses OpenCV.js." />
+            <Requirement label="Face Detection" text="Use a personal face photo and draw detection output." />
+            <Requirement label="Shadow Removal" text="Use a book/page image with shadow and remove it." />
+            <Requirement label="Submission" text="Demo-ready app with clear UI and visual results." />
+          </View>
+        </View>
 
-      <TouchableOpacity style={styles.primaryButton} onPress={pickImage}>
-        <Text style={styles.primaryText}>Choose Photo</Text>
-      </TouchableOpacity>
+        <Text style={styles.sectionTitle}>Vision Modules</Text>
+        <View style={styles.taskGrid}>
+          <TaskCard
+            title="Face Detection"
+            code="01"
+            active={mode === 'face'}
+            accent="#38bdf8"
+            text="OpenCV Haar Cascade with fallback face-box estimation for selfies, glasses, and helmets."
+            onPress={() => setMode('face')}
+          />
+          <TaskCard
+            title="Shadow Removal"
+            code="02"
+            active={mode === 'shadow'}
+            accent="#f59e0b"
+            text="Dilation, median background estimation, inverse difference, and normalization."
+            onPress={() => setMode('shadow')}
+          />
+        </View>
 
-      <Text style={styles.status}>{status}</Text>
+        <View style={styles.workflow}>
+          <View style={styles.workflowHeader}>
+            <View>
+              <Text style={styles.activeLabel}>Active Task</Text>
+              <Text style={styles.activeTitle}>{activeTask.label}</Text>
+            </View>
+            <View style={[styles.statusDot, { backgroundColor: activeTask.accent }]} />
+          </View>
+          <Text style={styles.workflowText}>{activeTask.objective}</Text>
+          <Text style={styles.workflowText}>{activeTask.output}</Text>
+          <TouchableOpacity style={[styles.primaryButton, { backgroundColor: activeTask.accent }]} onPress={pickImage}>
+            <Text style={styles.primaryText}>{activeTask.button}</Text>
+          </TouchableOpacity>
+        </View>
 
-      <View style={styles.webFrame}>
-        <WebView
-          ref={webViewRef}
-          source={{ html }}
-          onMessage={onMessage}
-          originWhitelist={['*']}
-          javaScriptEnabled
-          domStorageEnabled
-          mixedContentMode="always"
-          allowsInlineMediaPlayback
-          style={styles.webView}
-        />
-      </View>
+        <View style={styles.statusPanel}>
+          <Text style={styles.statusTitle}>Processing Status</Text>
+          <Text style={styles.status}>{status}</Text>
+        </View>
+
+        <View style={styles.outputPanel}>
+          <View style={styles.outputHeader}>
+            <Text style={styles.outputTitle}>OpenCV Output Canvas</Text>
+            <Text style={styles.outputMeta}>Runs inside WebView</Text>
+          </View>
+          <View style={styles.webFrame}>
+            <WebView
+              ref={webViewRef}
+              source={{ html }}
+              onMessage={onMessage}
+              originWhitelist={['*']}
+              javaScriptEnabled
+              domStorageEnabled
+              mixedContentMode="always"
+              allowsInlineMediaPlayback
+              style={styles.webView}
+            />
+          </View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
+function Requirement({ label, text }) {
+  return (
+    <View style={styles.requirementCard}>
+      <Text style={styles.requirementLabel}>{label}</Text>
+      <Text style={styles.requirementText}>{text}</Text>
+    </View>
+  );
+}
+
+function TaskCard({ title, code, active, accent, text, onPress }) {
+  return (
+    <TouchableOpacity style={[styles.taskCard, active && { borderColor: accent }]} activeOpacity={0.86} onPress={onPress}>
+      <View style={styles.taskTop}>
+        <Text style={[styles.taskCode, { color: accent }]}>{code}</Text>
+        <View style={[styles.taskPill, active && { backgroundColor: accent }]}>
+          <Text style={[styles.taskPillText, active && styles.taskPillTextOn]}>{active ? 'Selected' : 'Tap'}</Text>
+        </View>
+      </View>
+      <Text style={styles.taskTitle}>{title}</Text>
+      <Text style={styles.taskText}>{text}</Text>
+    </TouchableOpacity>
+  );
+}
+
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#edf2f7' },
-  header: { paddingHorizontal: 18, paddingTop: 18, paddingBottom: 12 },
-  kicker: { color: '#2563eb', fontSize: 12, fontWeight: '900', textTransform: 'uppercase' },
-  title: { color: '#111827', fontSize: 30, fontWeight: '900', marginTop: 6 },
-  subtitle: { color: '#526173', fontSize: 15, lineHeight: 21, marginTop: 6 },
-  segment: { flexDirection: 'row', marginHorizontal: 18, backgroundColor: '#d9e2ec', borderRadius: 8, padding: 4 },
-  segmentButton: { flex: 1, minHeight: 42, borderRadius: 7, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
-  segmentOn: { backgroundColor: '#ffffff' },
-  segmentText: { color: '#526173', fontWeight: '900', fontSize: 13, textAlign: 'center' },
-  segmentTextOn: { color: '#111827' },
-  primaryButton: { marginHorizontal: 18, marginTop: 12, minHeight: 50, borderRadius: 8, backgroundColor: '#2563eb', alignItems: 'center', justifyContent: 'center' },
-  primaryText: { color: '#ffffff', fontSize: 16, fontWeight: '900' },
-  status: { color: '#334155', fontSize: 13, lineHeight: 18, marginHorizontal: 18, marginTop: 10, minHeight: 36 },
-  webFrame: { flex: 1, margin: 18, marginTop: 10, borderRadius: 8, overflow: 'hidden', backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#d5dde8' },
+  screen: { flex: 1, backgroundColor: '#08111f' },
+  content: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 30 },
+  hero: { backgroundColor: '#0f1c2f', borderRadius: 8, padding: 18, borderWidth: 1, borderColor: '#1f3658' },
+  topLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  course: { color: '#93c5fd', fontSize: 12, fontWeight: '900', textTransform: 'uppercase' },
+  labBadge: { backgroundColor: '#172554', borderRadius: 8, paddingHorizontal: 10, minHeight: 30, justifyContent: 'center' },
+  labBadgeText: { color: '#bfdbfe', fontWeight: '900', fontSize: 12 },
+  title: { color: '#ffffff', fontSize: 30, fontWeight: '900', marginTop: 12 },
+  subtitle: { color: '#b6c3d4', fontSize: 15, lineHeight: 21, marginTop: 8 },
+  requirementsPanel: { marginTop: 14 },
+  sectionTitle: { color: '#ffffff', fontSize: 19, fontWeight: '900', marginTop: 16, marginBottom: 10 },
+  requirementGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  requirementCard: { width: '48.5%', backgroundColor: '#0f1c2f', borderRadius: 8, borderWidth: 1, borderColor: '#213957', padding: 12, minHeight: 92 },
+  requirementLabel: { color: '#67e8f9', fontSize: 13, fontWeight: '900' },
+  requirementText: { color: '#b6c3d4', fontSize: 12, lineHeight: 17, marginTop: 6 },
+  taskGrid: { gap: 10 },
+  taskCard: { backgroundColor: '#101827', borderRadius: 8, borderWidth: 1, borderColor: '#25344a', padding: 14 },
+  taskTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  taskCode: { fontSize: 18, fontWeight: '900' },
+  taskPill: { borderRadius: 8, borderWidth: 1, borderColor: '#334155', paddingHorizontal: 10, minHeight: 28, justifyContent: 'center' },
+  taskPillText: { color: '#94a3b8', fontSize: 12, fontWeight: '900' },
+  taskPillTextOn: { color: '#07111f' },
+  taskTitle: { color: '#ffffff', fontSize: 18, fontWeight: '900', marginTop: 10 },
+  taskText: { color: '#aebdd0', fontSize: 13, lineHeight: 19, marginTop: 6 },
+  workflow: { backgroundColor: '#f8fafc', borderRadius: 8, padding: 15, marginTop: 14 },
+  workflowHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  activeLabel: { color: '#64748b', fontSize: 12, fontWeight: '900', textTransform: 'uppercase' },
+  activeTitle: { color: '#0f172a', fontSize: 21, fontWeight: '900', marginTop: 2 },
+  statusDot: { width: 16, height: 16, borderRadius: 8 },
+  workflowText: { color: '#475569', fontSize: 14, lineHeight: 20, marginTop: 8 },
+  primaryButton: { marginTop: 14, minHeight: 50, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  primaryText: { color: '#07111f', fontSize: 16, fontWeight: '900' },
+  statusPanel: { backgroundColor: '#0f1c2f', borderRadius: 8, borderWidth: 1, borderColor: '#213957', padding: 14, marginTop: 14 },
+  statusTitle: { color: '#ffffff', fontSize: 15, fontWeight: '900' },
+  status: { color: '#c9d6e5', fontSize: 13, lineHeight: 19, marginTop: 6 },
+  outputPanel: { marginTop: 14, backgroundColor: '#0f1c2f', borderRadius: 8, borderWidth: 1, borderColor: '#213957', padding: 12 },
+  outputHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  outputTitle: { color: '#ffffff', fontSize: 16, fontWeight: '900' },
+  outputMeta: { color: '#94a3b8', fontSize: 12, fontWeight: '800' },
+  webFrame: { height: 430, borderRadius: 8, overflow: 'hidden', backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#2f4463' },
   webView: { flex: 1, backgroundColor: '#ffffff' }
 });
