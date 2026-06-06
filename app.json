@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "LAB06 OpenCV",
+    "slug": "lab06-opencv",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Select photos for Lab 6 OpenCV face detection and shadow removal demo."
+      }
+    }
+  }
+}
